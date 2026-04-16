@@ -1,38 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IR Blaster Control</title>
+    <title>Universal IR Remote</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        button { padding: 20px; font-size: 20px; margin: 10px; cursor: pointer; }
-        #status { color: gray; margin-bottom: 20px; }
+        body { font-family: -apple-system, sans-serif; text-align: center; background: #1a1a1a; color: white; padding: 20px; }
+        .section { background: #2a2a2a; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
+        button { 
+            padding: 15px 20px; font-size: 16px; margin: 5px; border: none; border-radius: 8px;
+            background: #007AFF; color: white; cursor: pointer; width: 40%;
+        }
+        button:active { background: #0051a8; }
+        #status { color: #00FF00; margin-bottom: 10px; font-weight: bold; }
+        .connect-btn { background: #34C759; width: 90%; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>IR Blaster Remote</h1>
-    <div id="status">Not Connected</div>
-    <button onclick="connectSerial()">Connect to RP2040</button>
-    <br>
-    <button onclick="sendCommand('POWER')">TV Power</button>
-    <button onclick="sendCommand('VOL_UP')">Volume +</button>
-    <button onclick="sendCommand('VOL_DOWN')">Volume -</button>
+    <h1>IR Control Panel</h1>
+    <div id="status">Disconnected</div>
+    <button class="connect-btn" onclick="connectSerial()">STEP 1: CONNECT TO REMOTE</button>
+
+    <div class="section">
+        <h3>LG TV</h3>
+        <button onclick="sendCommand('LG_PWR')">Power</button>
+        <button onclick="sendCommand('LG_MUTE')">Mute</button>
+        <button onclick="sendCommand('LG_VUP')">Vol +</button>
+        <button onclick="sendCommand('LG_VDN')">Vol -</button>
+    </div>
+
+    <div class="section">
+        <h3>Govee Lights</h3>
+        <button onclick="sendCommand('GOV_PWR')">Power</button>
+        <button onclick="sendCommand('GOV_RED')">Red</button>
+        <button onclick="sendCommand('GOV_GRN')">Green</button>
+        <button onclick="sendCommand('GOV_BLU')">Blue</button>
+    </div>
+
+    <div class="section">
+        <h3>Smartboard</h3>
+        <button onclick="sendCommand('SB_PWR')">Power</button>
+        <button onclick="sendCommand('SB_HOME')">Home</button>
+    </div>
 
     <script>
         let port;
         async function connectSerial() {
             try {
-                // Request a port and open a connection
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 115200 });
-                document.getElementById('status').innerText = "Connected!";
+                document.getElementById('status').innerText = "CONNECTED";
             } catch (e) {
-                console.error(e);
-                alert("Connection failed. Use Chrome or Bluefy on iOS.");
+                alert("Connection error. Use Bluefy browser on iPhone!");
             }
         }
 
         async function sendCommand(command) {
-            if (!port) return alert("Connect first!");
+            if (!port) return alert("Tap 'Connect' first!");
             const encoder = new TextEncoder();
             const writer = port.writable.getWriter();
             await writer.write(encoder.encode(command + "\n"));
@@ -41,3 +64,4 @@
     </script>
 </body>
 </html>
+
