@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IR Blaster Control</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        button { padding: 20px; font-size: 20px; margin: 10px; cursor: pointer; }
+        #status { color: gray; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>IR Blaster Remote</h1>
+    <div id="status">Not Connected</div>
+    <button onclick="connectSerial()">Connect to RP2040</button>
+    <br>
+    <button onclick="sendCommand('POWER')">TV Power</button>
+    <button onclick="sendCommand('VOL_UP')">Volume +</button>
+    <button onclick="sendCommand('VOL_DOWN')">Volume -</button>
+
+    <script>
+        let port;
+        async function connectSerial() {
+            try {
+                // Request a port and open a connection
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+                document.getElementById('status').innerText = "Connected!";
+            } catch (e) {
+                console.error(e);
+                alert("Connection failed. Use Chrome or Bluefy on iOS.");
+            }
+        }
+
+        async function sendCommand(command) {
+            if (!port) return alert("Connect first!");
+            const encoder = new TextEncoder();
+            const writer = port.writable.getWriter();
+            await writer.write(encoder.encode(command + "\n"));
+            writer.releaseLock();
+        }
+    </script>
+</body>
+</html>
