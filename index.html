@@ -1,43 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Zyvro MIDI Remote</title>
+    <title>Zyvro Master Remote</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .btn { padding: 20px; margin: 10px; width: 80%; max-width: 300px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        .lg { background: #a50034; color: white; }
-        .gov { background: #007bff; color: white; }
-        .sb { background: #34c759; color: white; }
+        body { font-family: -apple-system, sans-serif; text-align: center; background: #1a1a1a; color: white; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .section { background: #2a2a2a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #444; }
+        button { padding: 15px; font-size: 14px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .pwr { background: #ff3b30; grid-column: span 2; }
+        .lg { background: #a50034; }
+        .gov { background: #5856d6; }
+        .sb { background: #34c759; }
+        /* Color Buttons */
+        .red { background: #ff453a; } .grn { background: #32d74b; } .blu { background: #0a84ff; } .wht { background: #ffffff; color: black; }
     </style>
 </head>
 <body>
-    <h1>Zyvro IR Control</h1>
-    <p id="status">Checking for MIDI device...</p>
+    <h1>Zyvro Remote</h1>
+    <p id="status">🔌 Plug in your RP2040 Zero</p>
 
-    <button class="btn lg" onclick="sendNote(60)">LG TV POWER</button>
-    <button class="btn gov" onclick="sendNote(62)">GOVEE LIGHTS</button>
-    <button class="btn sb" onclick="sendNote(64)">SMARTBOARD POWER</button>
+    <!-- LG TV SECTION -->
+    <div class="section">
+        <h3>📺 LG TV</h3>
+        <div class="grid">
+            <button class="pwr" onclick="send(60)">POWER</button>
+            <button class="lg" onclick="send(61)">VOL +</button>
+            <button class="lg" onclick="send(62)">VOL -</button>
+            <button class="lg" onclick="send(63)">MUTE</button>
+            <button class="lg" onclick="send(64)">INPUT</button>
+        </div>
+    </div>
+
+    <!-- GOVEE SECTION -->
+    <div class="section">
+        <h3>💡 GOVEE LIGHTS</h3>
+        <div class="grid">
+            <button class="pwr" onclick="send(70)">POWER</button>
+            <button class="red" onclick="send(71)">RED</button>
+            <button class="grn" onclick="send(72)">GREEN</button>
+            <button class="blu" onclick="send(73)">BLUE</button>
+            <button class="wht" onclick="send(74)">WHITE</button>
+        </div>
+    </div>
+
+    <!-- SMARTBOARD SECTION -->
+    <div class="section">
+        <h3>🏫 SMARTBOARD</h3>
+        <div class="grid">
+            <button class="pwr" onclick="send(80)">POWER</button>
+            <button class="sb" onclick="send(81)">HOME</button>
+            <button class="sb" onclick="send(82)">VOL +</button>
+            <button class="sb" onclick="send(83)">VOL -</button>
+        </div>
+    </div>
 
     <script>
         let midiOut = null;
-
-        // Ask Safari for permission to use MIDI
         navigator.requestMIDIAccess().then(access => {
             const outputs = Array.from(access.outputs.values());
             if (outputs.length > 0) {
                 midiOut = outputs[0];
-                document.getElementById('status').innerText = "Connected: " + midiOut.name;
-            } else {
-                document.getElementById('status').innerText = "Plug in your RP2040 Zero!";
+                document.getElementById('status').innerText = "🟢 Connected: RP2040";
             }
         });
 
-        function sendNote(note) {
-            if (!midiOut) return alert("Device not found!");
-            // MIDI 'Note On' message (60 = C4, 62 = D4, etc.)
+        function send(note) {
+            if (!midiOut) return alert("Device not found! Check your cable.");
             midiOut.send([0x90, note, 0x7f]); 
-            // Briefly wait then send 'Note Off'
             setTimeout(() => midiOut.send([0x80, note, 0x00]), 100);
         }
     </script>
