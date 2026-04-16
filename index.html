@@ -1,62 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Zyvro MIDI Remote</title>
+    <title>Zyvro Master Remote</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: -apple-system, sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .section { background: #222; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #444; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; background: #007AFF; }
+        .section { background: #222; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #444; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 20px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; background: #007AFF; font-size: 16px; }
         .pwr { background: #FF3B30; grid-column: span 2; }
-        .red { background: #FF453A; } .grn { background: #32D74B; } .blu { background: #0A84FF; }
-        #status { font-size: 12px; color: #888; margin-bottom: 20px; }
+        #status { font-size: 14px; color: #00FF00; margin-bottom: 20px; min-height: 20px; }
     </style>
 </head>
 <body>
     <h1>Zyvro Remote</h1>
-    <p id="status">Searching for RP2040...</p>
+    <div id="status">Searching for MIDI...</div>
 
     <div class="section">
         <h3>LG TV</h3>
         <div class="grid">
-            <button class="pwr" onclick="send(60)">POWER</button>
-            <button onclick="send(61)">VOL +</button>
-            <button onclick="send(62)">VOL -</button>
+            <button class="pwr" onclick="sendNote(60)">LG POWER</button>
         </div>
     </div>
 
     <div class="section">
         <h3>GOVEE</h3>
         <div class="grid">
-            <button class="pwr" onclick="send(70)">POWER</button>
-            <button class="red" onclick="send(71)">RED</button>
-            <button class="grn" onclick="send(72)">GREEN</button>
-            <button class="blu" onclick="send(73)">BLUE</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>SMARTBOARD</h3>
-        <div class="grid">
-            <button class="pwr" onclick="send(80)">POWER</button>
-            <button onclick="send(81)">HOME</button>
+            <button class="pwr" onclick="sendNote(70)">GOVEE POWER</button>
         </div>
     </div>
 
     <script>
-        let midiOut = null;
-        navigator.requestMIDIAccess().then(access => {
-            const outputs = Array.from(access.outputs.values());
+        let midiAccess = null;
+
+        // Request MIDI Access with 'sysex' enabled (sometimes helps with discovery)
+        navigator.requestMIDIAccess({ sysex: true }).then(onSuccess, onFailure);
+
+        function onSuccess(access) {
+            midiAccess = access;
+            updateStatus();
+            // Listen for device plug/unplug events
+            midiAccess.onstatechange = updateStatus;
+        }
+
+        function updateStatus() {
+            const outputs = Array.from(midiAccess.outputs.values());
             if (outputs.length > 0) {
-                midiOut = outputs[0];
-                document.getElementById('status').innerText = "✅ CONNECTED";
+                document.getElementById('status').innerText = "✅ FOUND: " + outputs[0].name;
+            } else {
+                document.getElementById('status').innerText = "❓ No MIDI Outputs found";
             }
-        });
-        function send(note) {
-            if (!midiOut) return alert("Plug in your board first!");
-            midiOut.send([0x90, note, 0x7f]); // Note On
-            setTimeout(() => midiOut.send([0x80, note, 0x00]), 100); // Note Off
+        }
+
+        function onFailure() {
+            document.getElementById('status').innerText = "❌ MIDI Access Denied";
+        }
+
+        function sendNote(note) {
+            if (!midiAccess) return;
+            const outputs = Array.from(midiAccess.outputs.values());
+            
+            // Loop through ALL outputs and send the note to each
+            outputs.forEach(output => {
+                console.log("Sending to " + output.name);
+                output.send([0x90, note, 0x7f]); // Note On
+                setTimeout(() => output.send([0x80, note, 0x00]), 100); // Note Off
+            });
+            
+            if (outputs.length === 0) alert("Check cable - no outputs found!");
         }
     </script>
 </body>
