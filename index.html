@@ -1,65 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal IR Remote</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: -apple-system, sans-serif; text-align: center; background: #1a1a1a; color: white; padding: 20px; }
-        .section { background: #2a2a2a; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
-        button { 
-            padding: 15px 20px; font-size: 16px; margin: 5px; border: none; border-radius: 8px;
-            background: #007AFF; color: white; cursor: pointer; width: 40%;
-        }
-        button:active { background: #0051a8; }
-        #status { color: #00FF00; margin-bottom: 10px; font-weight: bold; }
-        .connect-btn { background: #34C759; width: 90%; margin-bottom: 20px; font-weight: bold; }
+        body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
+        .btn { padding: 15px; margin: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; width: 80%; max-width: 300px; }
+        .connect { background: #4CAF50; color: white; }
+        .command { background: #2196F3; color: white; }
+        #status { margin: 20px; padding: 10px; border: 1px solid #444; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <h1>IR Control Panel</h1>
-    <div id="status">Disconnected</div>
-    <button class="connect-btn" onclick="connectSerial()">STEP 1: CONNECT TO REMOTE</button>
-
-    <div class="section">
+    <h1>IR Remote Control</h1>
+    <div id="status">Status: Waiting for connection...</div>
+    
+    <button class="btn connect" onclick="connectSerial()">1. CONNECT TO DEVICE</button>
+    
+    <div id="controls" style="display:none;">
         <h3>LG TV</h3>
-        <button onclick="sendCommand('LG_PWR')">Power</button>
-        <button onclick="sendCommand('LG_MUTE')">Mute</button>
-        <button onclick="sendCommand('LG_VUP')">Vol +</button>
-        <button onclick="sendCommand('LG_VDN')">Vol -</button>
-    </div>
-
-    <div class="section">
-        <h3>Govee Lights</h3>
-        <button onclick="sendCommand('GOV_PWR')">Power</button>
-        <button onclick="sendCommand('GOV_RED')">Red</button>
-        <button onclick="sendCommand('GOV_GRN')">Green</button>
-        <button onclick="sendCommand('GOV_BLU')">Blue</button>
-    </div>
-
-    <div class="section">
+        <button class="btn command" onclick="send('LG_PWR')">Power</button>
+        <button class="btn command" onclick="send('LG_VUP')">Vol +</button>
+        
+        <h3>Govee</h3>
+        <button class="btn command" onclick="send('GOV_PWR')">Power</button>
+        
         <h3>Smartboard</h3>
-        <button onclick="sendCommand('SB_PWR')">Power</button>
-        <button onclick="sendCommand('SB_HOME')">Home</button>
+        <button class="btn command" onclick="send('SB_PWR')">Power</button>
     </div>
 
     <script>
         let port;
+        let writer;
+
         async function connectSerial() {
+            if (!("serial" in navigator)) {
+                alert("Your browser does NOT support Web Serial. Use Chrome on a Laptop/Android.");
+                return;
+            }
+
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 115200 });
-                document.getElementById('status').innerText = "CONNECTED";
-            } catch (e) {
-                alert("Connection error. Use Bluefy browser on iPhone!");
+                
+                const encoder = new TextEncoderStream();
+                const outputDone = encoder.readable.pipeTo(port.writable);
+                writer = encoder.writable.getWriter();
+                
+                document.getElementById('status').innerText = "Status: CONNECTED";
+                document.getElementById('controls').style.display = "block";
+            } catch (err) {
+                document.getElementById('status').innerText = "Status: " + err.message;
             }
         }
 
-        async function sendCommand(command) {
-            if (!port) return alert("Tap 'Connect' first!");
-            const encoder = new TextEncoder();
-            const writer = port.writable.getWriter();
-            await writer.write(encoder.encode(command + "\n"));
-            writer.releaseLock();
+        async function send(msg) {
+            if (writer) {
+                await writer.write(msg + "\n");
+            }
         }
     </script>
 </body>
